@@ -1,0 +1,36 @@
+{
+    "points": [[0.0, 0.0], [0.0, 10.0], [3.0, 5.0], [-3.0, 5.0]],
+    "sticks": [[1, 0], [1, 2], [1, 3]],
+    "grounded": [1],
+    "rigs": [
+        {
+            "name": "idle",
+            "positions": [90, -45, -135]
+        },
+        {
+            "name": "right",
+            "positions": [75, -135, -45]
+        },
+        {
+            "name": "left",
+            "positions": [105, -135, -45]
+        }
+    ],
+    "animations": [
+        {
+            "name": "idle",
+            "frames": 1,
+            "rigs": [0]
+        },
+        {
+            "name": "left",
+            "frames": 15,
+            "rigs": [0, 2]
+        },
+        {
+            "name": "right",
+            "frames": 15,
+            "rigs": [0, 1]
+        }
+    ]
+}
