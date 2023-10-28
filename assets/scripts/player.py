@@ -12,6 +12,7 @@ class Player:
         self.air_timer = 0
         self.online = True
         self.in_vehicle = False
+        self.prev_pos = self.rect.center
 
     def update(self, dt, rects):
         if not self.in_vehicle:
@@ -61,5 +62,5 @@ class Player:
             self.air_timer += 1 * dt
 
     def draw(self, screen, scroll):
-        pygame.draw.rect(screen, (255, 0, 0), (self.rect.x - scroll[0], self.rect.y - scroll[1], self.rect.width, self.rect.height))
+        # pygame.draw.rect(screen, (255, 0, 0), (self.rect.x - scroll[0], self.rect.y - scroll[1], self.rect.width, self.rect.height))
         self.ragdoll.draw(screen, scroll)

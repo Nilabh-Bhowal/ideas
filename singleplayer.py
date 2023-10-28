@@ -70,9 +70,11 @@ def run(screen):
         keymap["car"] = False
         keymap["ride"] = False
 
-        true_scroll[0] += (player.rect.centerx - scroll[0] - 640) / 30 * dt
-        true_scroll[1] += (player.rect.centery - scroll[1] - 360) / 30 * dt
+        true_scroll[0] += (player.rect.centerx - scroll[0] - 640) / 15 * dt
+        true_scroll[1] += (player.rect.centery - scroll[1] - 360) / 15 * dt
         scroll = [int(true_scroll[0]), int(true_scroll[1])]
+        scroll = [int(true_scroll[0]), int(true_scroll[1])]
+        scroll[1] = min(scroll[1], -120)
 
         screen.fill((105, 235, 255))
         pygame.draw.rect(screen, (148, 75, 16), (ground.x - scroll[0], ground.y - scroll[1], ground.width, ground.height))
@@ -81,7 +83,7 @@ def run(screen):
         player.draw(screen, scroll)
         pygame.display.update()
 
-        clock.tick()
+        clock.tick(5)
         now = time.time()
         dt = (now - pt) * 60
         dt = min(dt, 4)

@@ -12,14 +12,14 @@ class Car:
 
     def update(self, dt, rects):
         self.y_momentum += 0.1 * dt
-        self.y_momentum = min(self.y_momentum, 1)
+        self.y_momentum = min(self.y_momentum, 5)
         self.movement[1] += self.y_momentum * dt
         self.movement[0] += self.acceleration * dt
         if self.movement[0] > 0:
             self.movement[0] = min(self.movement[0], self.speed)
         else:
             self.movement[0] = max(self.movement[0], -self.speed)
-        self.movement[0] *= 0.995
+        self.movement[0] *= 0.99
 
         self.collisions = {"right": False, "left": False, "top": False, "bottom":False}
 
@@ -48,7 +48,7 @@ class Car:
             self.movement[1] = 0
 
         if self.driver:
-            self.driver.rect.x = self.rect.x + 100
+            self.driver.rect.x = self.rect.x + 200
             self.driver.rect.y = self.rect.y + 10
 
     def draw(self, screen, scroll):

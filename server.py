@@ -53,14 +53,16 @@ def threaded_client(conn, player):  # sourcery skip: do-not-use-bare-except
                 if data["keymap"]["ride"]:
                     for car in cars:
                         if players[player].rect.colliderect(car.rect):
-                            car.driver = players[player] if car.driver != players[player] else None
-                            players[player].in_vehicle = not players[player].in_vehicle
-
-                players[player].update(dt, [ground])
+                            if car.driver is None:
+                                car.driver = players[player]
+                                players[player].in_vehicle = True
+                            elif car.driver == players[player]:
+                                car.driver = None
+                                players[player].in_vehicle = False
 
                 reply = [[p for p in players if p.online and math.dist(p.rect.center, players[player].rect.center) < 2000], [c for c in cars if math.dist(c.rect.center, players[player].rect.center) < 2000], players[player]]
-                # print("Received: ", data)
-                # print("Sending : ", reply)
+                print("Received: ", data)
+                print("Sending : ", reply)
                 clock.tick()
                 now = time.time()
                 dt = (now - pt) * 60
@@ -68,9 +70,12 @@ def threaded_client(conn, player):  # sourcery skip: do-not-use-bare-except
                 pt = now
             else:
                 print("Disconnected")
-                break
+                for car in cars:
+                    if car.driver == players[player]:
+                        car.driver = None
+                    break
             conn.sendall(pickle.dumps(reply))
-        except Exception:
+        except:
             break
 
     print("Lost connection")
@@ -82,10 +87,17 @@ def game_loop():
     pt = time.time()
     dt = 1
     while True:
-        print(dt)
         for car in cars:
             car.update(dt, [ground])
-        clock.tick()
+            if car.rect.y > 5000 or len(cars) > 10:
+                cars.remove(car)
+        for player in players:
+            player.update(dt, [ground])
+            if player.rect.y > 5000:
+                player.rect.x = 100
+                player.rect.y = 0
+                player.in_vehicle = False
+        clock.tick(60)
         now = time.time()
         dt = (now - pt) * 60
         dt = min(dt, 4)

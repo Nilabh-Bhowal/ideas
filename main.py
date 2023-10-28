@@ -29,9 +29,8 @@ def main_menu():
         if play_button.draw(screen, 0, pygame.mouse.get_pos()):
             server_prompt.prompt()
 
-        if singleplayer_button.draw(screen, 0, pygame.mouse.get_pos()):
-            if singleplayer.run(screen):
-                running = False
+        if singleplayer_button.draw(screen, 0, pygame.mouse.get_pos()) and (singleplayer.run(screen)):
+            running = False
 
         if server := server_prompt.draw(screen):
             if multiplayer.run(screen, server):

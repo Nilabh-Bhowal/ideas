@@ -8,6 +8,8 @@ class Network:
         connection = ip.split(":")
         self.server = connection[0]
         self.port = int(connection[1])
+        # self.server = "localhost"
+        # self.port = 5555
         self.addr = (self.server, self.port)
         self.p = self.connect()
 
