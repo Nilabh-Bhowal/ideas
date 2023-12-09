@@ -2,16 +2,21 @@ import socket
 from _thread import *
 import pickle
 import pygame
-import threading
-import math
+from pygame.locals import *
 import time
 from assets.scripts.player import Player
-from assets.scripts.car import Car
+from assets.scripts.building import Building
+from assets.scripts.road import Road
 
-server = "localhost"
+server = "127.0.0.1"
 port = 5555
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+pygame.init()
+
+
+running = True
 
 players = []
 cars = []
@@ -25,57 +30,25 @@ except socket.error as e:
 s.listen(2)
 print("Waiting for a connection, Server Started")
 
-ground = pygame.Rect(-5000, 400, 10000, 200)
-
 def threaded_client(conn, player):  # sourcery skip: do-not-use-bare-except
-    conn.sendall(pickle.dumps(players[player]))
-    clock = pygame.time.Clock()
-    pt = time.time()
-    dt = 1
-    while True:
+    conn.sendall(pickle.dumps({"x": players[player].obj.x, "y": players[player].obj.y}))
+    while running:
         try:
             if data := pickle.loads(conn.recv(4096)):
 
-                if players[player].in_vehicle:
-                    for car in cars:
-                        if car.driver == players[player]:
-                            car.acceleration = (data["keymap"]["right"] - data["keymap"]["left"])
-                else:
-                    players[player].movement[0] = (data["keymap"]["right"] - data["keymap"]["left"]) * 5
-                if data["keymap"]["up"]:
-                    if jumped == False and players[player].air_timer < 10:
-                        jumped = True
-                        players[player].movement[1] = data["keymap"]["up"] * -15
-                else:
-                    jumped = False
-                if data["keymap"]["car"]:
-                    cars.append(Car(players[player].rect.x, players[player].rect.y))
-                if data["keymap"]["ride"]:
-                    for car in cars:
-                        if players[player].rect.colliderect(car.rect):
-                            if car.driver is None:
-                                car.driver = players[player]
-                                players[player].in_vehicle = True
-                            elif car.driver == players[player]:
-                                car.driver = None
-                                players[player].in_vehicle = False
+                players[player].obj.x = data["x"]
+                players[player].obj.y = data["y"]
+                players[player].obj.z = data["z"]
 
-                reply = [[p for p in players if p.online and math.dist(p.rect.center, players[player].rect.center) < 2000], [c for c in cars if math.dist(c.rect.center, players[player].rect.center) < 2000], players[player]]
+                reply = [{"x": int(p.obj.x), "y": int(p.obj.y), "z": int(p.obj.z)} for p in players if p.online == True]
                 print("Received: ", data)
                 print("Sending : ", reply)
-                clock.tick()
-                now = time.time()
-                dt = (now - pt) * 60
-                dt = min(dt, 4)
-                pt = now
+
             else:
                 print("Disconnected")
-                for car in cars:
-                    if car.driver == players[player]:
-                        car.driver = None
-                    break
             conn.sendall(pickle.dumps(reply))
-        except:
+        except Exception as e:
+            print(e)
             break
 
     print("Lost connection")
@@ -83,31 +56,71 @@ def threaded_client(conn, player):  # sourcery skip: do-not-use-bare-except
     conn.close()
 
 def game_loop():
+    global running
+
+    screen = pygame.display.set_mode((1280, 720))
+
+    scroll = [0, -100, 0]
+
+    road = Road()
+    building = Building(200, 200, "data")
+    player_img = pygame.transform.scale_by(pygame.image.load("assets/images/player.png").convert(), 16)
+    blit_list = []
+
     clock = pygame.time.Clock()
     pt = time.time()
     dt = 1
-    while True:
-        for car in cars:
-            car.update(dt, [ground])
-            if car.rect.y > 5000 or len(cars) > 10:
-                cars.remove(car)
-        for player in players:
-            player.update(dt, [ground])
-            if player.rect.y > 5000:
-                player.rect.x = 100
-                player.rect.y = 0
-                player.in_vehicle = False
-        clock.tick(60)
-        now = time.time()
-        dt = (now - pt) * 60
-        dt = min(dt, 4)
-        pt = now
+    while running:
+        try:
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    running = False
+
+            key_pressed = pygame.key.get_pressed()
+            scroll[0] += (key_pressed[K_RIGHT] - key_pressed[K_LEFT]) * 5 * dt
+            scroll[1] += (key_pressed[K_DOWN] - key_pressed[K_UP]) * 5 * dt
+
+            screen.fill((105, 235, 255))
+            blit_list = []
+            road.draw(blit_list, scroll)
+            building.draw(blit_list, scroll)
+
+            for p in players:
+                if p.online:
+                    draw_x = p.obj.x - scroll[0]
+                    draw_y = p.obj.y - scroll[1]
+                    draw_z = p.obj.z - scroll[2]
+
+                    if p.obj.z != -1000:
+                        scale = 1000 / (1000 + draw_z)
+                        draw_x = draw_x * scale
+                        draw_y = draw_y * scale
+
+                    draw_x += 640
+                    draw_y += 360
+
+                    blit_list.append({"surf": pygame.transform.scale_by(player_img, scale), "pos": (draw_x, draw_y), "z": p.obj.z})
+
+            for item in sorted(blit_list, key=lambda surf: surf["z"], reverse=True):
+                if item["surf"]:
+                    screen.blit(item["surf"], (item["pos"]))
+
+            pygame.display.update()
+
+            clock.tick(300)
+            now = time.time()
+            dt = (now - pt) * 60
+            dt = min(dt, 4)
+            pt = now
+        except Exception as e:
+            print(e)
+            break
+    pygame.quit()
 
 
-game_thread = threading.Thread(target=game_loop)
-game_thread.start()
+start_new_thread(game_loop, ())
 
-while True:
+while running:
     conn, addr = s.accept()
     print("Connected to:", addr)
 
